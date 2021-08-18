@@ -13,6 +13,7 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import reactor.core.publisher.Mono
 import reactor.test.StepVerifier
+import java.util.*
 
 class ContentletServiceTest {
 
@@ -20,10 +21,20 @@ class ContentletServiceTest {
 
     private lateinit var contentletService: ContentletService;
 
+    val saveHook: ContentletService.SaveHook = ContentletService.SaveHook(){ contentlet: ContentletEntity, isNew: Boolean, next: ContentletService.Next ->
+        next(contentlet, isNew)
+            .doOnEach({signal -> println("SaveHookExecuted!")})
+    }
+
+    val saveHook2: ContentletService.SaveHook = ContentletService.SaveHook() { contentlet: ContentletEntity, isNew: Boolean, next: ContentletService.Next ->
+        next(contentlet, isNew)
+            .doOnEach({signal -> println("SaveHook2Executed!")})
+    }
+
     @BeforeEach()
     fun setup() {
         contentletRepository = mock();
-        contentletService = ContentletService(contentletRepository)
+        contentletService = ContentletService(contentletRepository, listOf(saveHook, saveHook2))
     }
 
     @Nested()
