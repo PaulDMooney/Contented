@@ -6,17 +6,24 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.autoconfigure.data.mongo.AutoConfigureDataMongo
+import org.springframework.boot.test.autoconfigure.data.mongo.DataMongoTest
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.web.server.LocalServerPort
+import org.springframework.http.client.reactive.ClientHttpConnector
 import org.springframework.test.context.junit.jupiter.SpringExtension
+import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.web.client.RestTemplate
+import org.springframework.web.reactive.function.client.WebClient
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ExtendWith(SpringExtension::class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-internal class ContentletControllerTest @Autowired constructor(
-    private val contentletRepository: ContentletRepository,
-    private val restTemplate: RestTemplate) {
+//@DataMongoTest
+class ContentletControllerTest @Autowired constructor(
+    private val contentletRepository: ContentletRepository) {
+
+    private lateinit var webTestClient: WebTestClient;
 
     @LocalServerPort
     protected var port: Int = 0;
@@ -24,6 +31,7 @@ internal class ContentletControllerTest @Autowired constructor(
     @BeforeEach
     fun setup() {
         contentletRepository.deleteAll();
+        webTestClient = WebTestClient.bindToServer().baseUrl(getRootUrl()).build();
     }
 
     private fun getRootUrl(): String = "http://localhost:$port/contentlets"
@@ -37,10 +45,12 @@ internal class ContentletControllerTest @Autowired constructor(
         saveOneContentlet();
 
         // When
-        val response = restTemplate.getForEntity("${getRootUrl()}/all",List::class.java);
+        var response = webTestClient.get().uri("/all").exchange()
+//        val response = restTemplate.getForEntity("/contentlets/all",List::class.java);
 
         // Then
-        assertEquals(200, response.statusCode.value());
-        assertEquals(1, response.body?.size);
+        response.expectStatus().is2xxSuccessful();
+//        assertEquals(200, response.statusCode.value());
+//        assertEquals(1, response.body?.size);
     }
 }

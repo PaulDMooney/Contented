@@ -13,7 +13,6 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import reactor.core.publisher.Mono
 import reactor.test.StepVerifier
-import java.util.*
 
 class ContentletServiceTest {
 
@@ -21,20 +20,30 @@ class ContentletServiceTest {
 
     private lateinit var contentletService: ContentletService;
 
-    val saveHook: ContentletService.SaveHook = ContentletService.SaveHook(){ contentlet: ContentletEntity, isNew: Boolean, next: ContentletService.Next ->
+    val saveHook = ContentletService.SaveHook(){ contentlet: ContentletEntity, isNew: Boolean, next: ContentletService.Next ->
         next(contentlet, isNew)
-            .doOnEach({signal -> println("SaveHookExecuted!")})
+            .doOnEach { _ -> println("SaveHookExecuted!") }
     }
 
-    val saveHook2: ContentletService.SaveHook = ContentletService.SaveHook() { contentlet: ContentletEntity, isNew: Boolean, next: ContentletService.Next ->
+    val saveHook2 = ContentletService.SaveHook() { contentlet: ContentletEntity, isNew: Boolean, next: ContentletService.Next ->
         next(contentlet, isNew)
-            .doOnEach({signal -> println("SaveHook2Executed!")})
+            .doOnEach { _ -> println("SaveHook2Executed!") }
     }
 
     @BeforeEach()
     fun setup() {
         contentletRepository = mock();
         contentletService = ContentletService(contentletRepository, listOf(saveHook, saveHook2))
+    }
+
+    fun `when repository#save() return input argument`() {
+        whenever(contentletRepository.save(any()))
+            .thenAnswer { answer -> Mono.just(answer.getArgument(0, ContentletEntity::class.java))}
+    }
+
+    fun `when repository#existsById return`(returnValue: Boolean) {
+        whenever(contentletRepository.existsById(anyString()))
+            .thenReturn(Mono.just(returnValue));
     }
 
     @Nested()
@@ -44,10 +53,8 @@ class ContentletServiceTest {
 
             // given
             val contentletToSave = ContentletEntity("1234", "someValue")
-            whenever(contentletRepository.save(any()))
-                .thenAnswer {answer -> Mono.just(answer.getArgument(0, ContentletEntity::class.java))}
-            whenever(contentletRepository.existsById(anyString()))
-                .thenReturn(Mono.just(true));
+            `when repository#save() return input argument`()
+            `when repository#existsById return`(true)
 
             // when
             val contentletResult = contentletService.save(contentletToSave);
@@ -67,10 +74,8 @@ class ContentletServiceTest {
         fun `save should return true if contentlet is new`() {
             // given
             val contentletToSave = ContentletEntity("1234", "someValue")
-            whenever(contentletRepository.save(any()))
-                .thenAnswer {answer -> Mono.just(answer.getArgument(0, ContentletEntity::class.java))}
-            whenever(contentletRepository.existsById(anyString()))
-                .thenReturn(Mono.just(false));
+            `when repository#save() return input argument`()
+            `when repository#existsById return`(false)
 
             // when
             val contentletResult = contentletService.save(contentletToSave);
@@ -88,10 +93,8 @@ class ContentletServiceTest {
         fun `save should return false if contentlet is only updated`() {
             // given
             val contentletToSave = ContentletEntity("1234", "someValue")
-            whenever(contentletRepository.save(any()))
-                .thenAnswer {answer -> Mono.just(answer.getArgument(0, ContentletEntity::class.java))}
-            whenever(contentletRepository.existsById(anyString()))
-                .thenReturn(Mono.just(true));
+            `when repository#save() return input argument`()
+            `when repository#existsById return`(true)
 
             // when
             val contentletResult = contentletService.save(contentletToSave);
@@ -124,6 +127,43 @@ class ContentletServiceTest {
                     assertThat(deleteIdCaptor.value).isEqualTo(identifierToDelete)
                 }
                 .verifyComplete()
+        }
+    }
+
+    @Nested
+    inner class SaveHooks {
+
+        @Test
+        fun `save should call savehooks in order`() {
+
+            // Given
+            val contentletToSave = ContentletEntity("1234", "someValue")
+            `when repository#save() return input argument`()
+            `when repository#existsById return`(true)
+
+            val saveHooksCalled = arrayListOf<String>();
+
+            val saveHook1 = ContentletService.SaveHook(){ contentlet: ContentletEntity, isNew: Boolean, next: ContentletService.Next ->
+                saveHooksCalled.add("first");
+                next(contentlet, isNew)
+            }
+
+            val saveHook2 = ContentletService.SaveHook(){ contentlet: ContentletEntity, isNew: Boolean, next: ContentletService.Next ->
+                saveHooksCalled.add("second");
+                next(contentlet, isNew)
+            }
+
+            var contentletService = ContentletService(contentletRepository, listOf(saveHook1, saveHook2));
+
+            // When
+            var result = contentletService.save(contentletToSave);
+
+            // Then
+            StepVerifier.create(result)
+                .assertNext {
+                    assertThat(saveHooksCalled).asList().containsExactly("first", "second");
+                }.verifyComplete();
+
         }
     }
 }
