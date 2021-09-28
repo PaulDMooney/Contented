@@ -1,10 +1,10 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-	id("org.springframework.boot") version "2.5.3"
+	id("org.springframework.boot") version "2.5.5"
 	id("io.spring.dependency-management") version "1.0.11.RELEASE"
-	kotlin("jvm") version "1.5.10"
-	kotlin("plugin.spring") version "1.5.10"
+	kotlin("jvm") version "1.5.31"
+	kotlin("plugin.spring") version "1.5.31"
 }
 
 group = "com.example"
@@ -18,7 +18,7 @@ repositories {
 dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-data-mongodb-reactive")
 	implementation("org.springframework.boot:spring-boot-starter-webflux")
-	implementation("org.springdoc:springdoc-openapi-webflux-ui:1.5.9")
+	implementation("org.springdoc:springdoc-openapi-webflux-ui:1.5.10")
 	implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
 	implementation("io.projectreactor.kotlin:reactor-kotlin-extensions")
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
