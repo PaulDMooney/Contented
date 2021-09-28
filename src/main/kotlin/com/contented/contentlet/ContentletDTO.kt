@@ -1,4 +1,4 @@
-package com.example.contently.contentlet
+package com.contented.contentlet
 
 class ContentletDTO(
     val id: String,

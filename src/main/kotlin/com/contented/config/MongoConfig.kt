@@ -1,4 +1,4 @@
-package com.example.contently.config
+package com.contented.config
 
 import com.mongodb.reactivestreams.client.MongoClient
 import com.mongodb.reactivestreams.client.MongoClients

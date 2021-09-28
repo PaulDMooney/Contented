@@ -1,1 +1,1 @@
-rootProject.name = "mongodemo"
+rootProject.name = "contented"

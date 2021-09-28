@@ -1,4 +1,4 @@
-package com.example.contently.contentlet
+package com.contented.contentlet
 
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses

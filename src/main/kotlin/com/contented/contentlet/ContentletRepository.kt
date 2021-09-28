@@ -1,4 +1,4 @@
-package com.example.contently.contentlet
+package com.contented.contentlet
 
 import org.springframework.data.mongodb.repository.ReactiveMongoRepository
 import org.springframework.stereotype.Repository

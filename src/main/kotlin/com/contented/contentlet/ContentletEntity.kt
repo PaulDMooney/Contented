@@ -1,4 +1,4 @@
-package com.example.contently.contentlet
+package com.contented.contentlet
 
 
 import org.springframework.data.annotation.Id

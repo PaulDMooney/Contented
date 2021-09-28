@@ -1,4 +1,4 @@
-package com.example.contently.contentlet
+package com.contented.contentlet
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
