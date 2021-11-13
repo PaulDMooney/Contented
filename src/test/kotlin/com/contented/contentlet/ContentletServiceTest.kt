@@ -52,7 +52,7 @@ class ContentletServiceTest {
         fun `save should return saved contentlet`() {
 
             // given
-            val contentletToSave = ContentletEntity("1234", "someValue")
+            val contentletToSave = ContentletEntity("1234")
             `when repository#save() return input argument`()
             `when repository#existsById return`(true)
 
@@ -64,7 +64,6 @@ class ContentletServiceTest {
                 .assertNext { resultPair ->
                     val contentletEntity = resultPair.contentlet
                     assertThat(contentletEntity.id).isEqualTo(contentletToSave.id)
-                    assertThat(contentletEntity.someValue).isEqualTo(contentletToSave.someValue)
                 }
                 .expectComplete()
                 .verify()
@@ -73,7 +72,7 @@ class ContentletServiceTest {
         @Test
         fun `save should return true if contentlet is new`() {
             // given
-            val contentletToSave = ContentletEntity("1234", "someValue")
+            val contentletToSave = ContentletEntity("1234")
             `when repository#save() return input argument`()
             `when repository#existsById return`(false)
 
@@ -92,7 +91,7 @@ class ContentletServiceTest {
         @Test
         fun `save should return false if contentlet is only updated`() {
             // given
-            val contentletToSave = ContentletEntity("1234", "someValue")
+            val contentletToSave = ContentletEntity("1234")
             `when repository#save() return input argument`()
             `when repository#existsById return`(true)
 
@@ -137,7 +136,7 @@ class ContentletServiceTest {
         fun `save should call savehooks in order`() {
 
             // Given
-            val contentletToSave = ContentletEntity("1234", "someValue")
+            val contentletToSave = ContentletEntity("1234")
             `when repository#save() return input argument`()
             `when repository#existsById return`(true)
 

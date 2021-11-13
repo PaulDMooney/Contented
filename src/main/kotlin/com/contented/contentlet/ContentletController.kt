@@ -25,7 +25,7 @@ class ContentletController(private val contentletRepository: ContentletRepositor
     fun createContentlet(@RequestBody request: ContentletDTO):Mono<ResponseEntity<ContentletEntity>> {
         return contentletService.save(ContentletEntity(
             id = request.id,
-            someValue = request.someValue
+            schemalessData = request.schemalessData
         )).map { result ->
             val status = if (result.isNew) HttpStatus.CREATED else HttpStatus.OK
             ResponseEntity<ContentletEntity>(result.contentlet, status)

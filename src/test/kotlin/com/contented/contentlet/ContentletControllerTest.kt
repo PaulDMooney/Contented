@@ -1,19 +1,24 @@
 package com.contented.contentlet
 
+import com.contented.MongodemoApplication
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.autoconfigure.data.mongo.AutoConfigureDataMongo
+import org.springframework.boot.test.autoconfigure.data.mongo.DataMongoTest
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.web.server.LocalServerPort
+import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.junit.jupiter.SpringExtension
 import org.springframework.test.web.reactive.server.WebTestClient
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ExtendWith(SpringExtension::class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-//@DataMongoTest
+@AutoConfigureDataMongo
+//@ContextConfiguration(classes=[MongodemoApplication::class])
 class ContentletControllerTest @Autowired constructor(
     private val contentletRepository: ContentletRepository) {
 
@@ -30,7 +35,7 @@ class ContentletControllerTest @Autowired constructor(
 
     private fun getRootUrl(): String = "http://localhost:$port/contentlets"
 
-    private fun saveOneContentlet() = contentletRepository.save(ContentletEntity("12345","SomeValue"))
+    private fun saveOneContentlet() = contentletRepository.save(ContentletEntity("12345"))
 
     @Test
     fun `should return all contentlets`() {

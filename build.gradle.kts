@@ -29,6 +29,7 @@ dependencies {
 	testImplementation("io.projectreactor:reactor-test")
 	testImplementation("org.assertj:assertj-core:3.20.2")
 	testImplementation("org.mockito.kotlin:mockito-kotlin:3.2.0")
+	testImplementation("io.netty:netty-resolver-dns-native-macos:4.1.70.Final:osx-aarch_64")
 }
 
 tasks.withType<KotlinCompile> {
