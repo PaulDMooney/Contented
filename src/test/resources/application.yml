@@ -1,0 +1,6 @@
+
+spring:
+  data:
+    mongodb:
+#      Crucial for flapdoodle in-memory mongodb to work
+      port: 0

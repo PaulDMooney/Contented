@@ -1,6 +1,7 @@
 package com.contented.contentlet
 
 import com.contented.MongodemoApplication
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
@@ -10,16 +11,20 @@ import org.springframework.boot.test.autoconfigure.data.mongo.AutoConfigureDataM
 import org.springframework.boot.test.autoconfigure.data.mongo.DataMongoTest
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.web.server.LocalServerPort
+import org.springframework.core.ParameterizedTypeReference
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.junit.jupiter.SpringExtension
 import org.springframework.test.web.reactive.server.WebTestClient
+import java.util.function.Consumer
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+inline fun <reified T> typeReference() = object : ParameterizedTypeReference<T>() {}
+
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT )
 @ExtendWith(SpringExtension::class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @AutoConfigureDataMongo
-//@ContextConfiguration(classes=[MongodemoApplication::class])
 class ContentletControllerTest @Autowired constructor(
+
     private val contentletRepository: ContentletRepository) {
 
     private lateinit var webTestClient: WebTestClient;
@@ -41,15 +46,17 @@ class ContentletControllerTest @Autowired constructor(
     fun `should return all contentlets`() {
 
         // Given
-        saveOneContentlet();
+        saveOneContentlet().block();
 
         // When
         var response = webTestClient.get().uri("/all").exchange()
-//        val response = restTemplate.getForEntity("/contentlets/all",List::class.java);
 
         // Then
-        response.expectStatus().is2xxSuccessful();
-//        assertEquals(200, response.statusCode.value());
-//        assertEquals(1, response.body?.size);
+        response.expectStatus()
+            .is2xxSuccessful()
+            .expectBodyList(ContentletEntity::class.java)
+                .hasSize(1).value<WebTestClient.ListBodySpec<ContentletEntity>> {contentlets ->
+                    assertThat(contentlets[0]).hasFieldOrPropertyWithValue("id", "12345")
+                };
     }
 }
