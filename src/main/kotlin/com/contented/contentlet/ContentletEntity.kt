@@ -11,7 +11,7 @@ data class ContentletEntity (
 
     @Id
     val id: String,
-    val schemalessData: MutableMap<String, Any> = LinkedHashMap()
+    private val schemalessData: MutableMap<String, Any> = LinkedHashMap()
 ) {
     @JsonAnySetter
     fun add(key:String, value: Any) {
