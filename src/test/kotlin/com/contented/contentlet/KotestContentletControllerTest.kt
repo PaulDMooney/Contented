@@ -4,6 +4,10 @@ import io.kotest.core.listeners.TestListener
 import io.kotest.core.script.describe
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.core.spec.style.FunSpec
+import io.kotest.matchers.maps.shouldContain
+import io.kotest.matchers.maps.shouldNotContain
+import io.kotest.matchers.maps.shouldNotContainKey
+import io.kotest.matchers.shouldBe
 import io.kotest.spring.SpringListener
 import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
@@ -14,13 +18,14 @@ import org.springframework.boot.test.autoconfigure.data.mongo.AutoConfigureDataM
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.web.server.LocalServerPort
 import org.springframework.http.HttpStatus
+import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.context.junit.jupiter.SpringExtension
 import org.springframework.test.web.reactive.server.WebTestClient
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT )
-@ExtendWith(SpringExtension::class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @AutoConfigureDataMongo
+@DirtiesContext
 class KotestContentletControllerTest: DescribeSpec() {
 
     override fun listeners(): List<TestListener> = listOf(SpringListener)
@@ -57,8 +62,8 @@ class KotestContentletControllerTest: DescribeSpec() {
                     .is2xxSuccessful()
                     .expectBodyList(ContentletEntity::class.java)
                     .hasSize(1).value<WebTestClient.ListBodySpec<ContentletEntity>> { contentlets ->
-                        Assertions.assertThat(contentlets[0]).hasFieldOrPropertyWithValue("id", "12345")
-                        Assertions.assertThat(contentlets[0].get()).hasFieldOrPropertyWithValue("myint", 1)
+                        contentlets[0].id shouldBe "12345"
+                        contentlets[0].get() shouldContain ("myint" to 1)
                     };
             }
         }
@@ -77,7 +82,7 @@ class KotestContentletControllerTest: DescribeSpec() {
                     response = webTestClient.put().bodyValue(toSave).exchange()
                 }
 
-                it("should return status ${HttpStatus.CREATED.value()}") {
+                it("should return status 201") {
                     response.expectStatus().isEqualTo(HttpStatus.CREATED)
                 }
 
@@ -85,8 +90,8 @@ class KotestContentletControllerTest: DescribeSpec() {
                     val savedContentlet = contentletRepository.findById(toSave.id).block()
 
                     // Found entry in database with same id and fields
-                    Assertions.assertThat(savedContentlet).hasFieldOrPropertyWithValue("id", toSave.id)
-                    Assertions.assertThat(savedContentlet?.get()).hasFieldOrPropertyWithValue("mystring", toSave.get()["mystring"])
+                    savedContentlet!!.id shouldBe toSave.id
+                    savedContentlet.get() shouldContain ("mystring" to toSave.get()["mystring"])
                 }
 
                 it("should return the saved contentlet") {
@@ -110,14 +115,15 @@ class KotestContentletControllerTest: DescribeSpec() {
                     response = webTestClient.put().bodyValue(toSave).exchange()
                 }
 
-                it("should return status ${HttpStatus.OK.value()}") {
+                it("should return status 200") {
                     response.expectStatus().isEqualTo(HttpStatus.OK)
                 }
 
                 it("should have saved updates to the database with old fields removed") {
                     val updatedContentlet = contentletRepository.findById(toSave.id).block()
-                    Assertions.assertThat(updatedContentlet?.get()).hasFieldOrPropertyWithValue("myboolean", true)
-                    Assertions.assertThat(updatedContentlet?.get()).doesNotContainEntry("myint", 1)
+
+                    updatedContentlet!!.get() shouldContain ("myboolean" to true)
+                    updatedContentlet.get() shouldNotContainKey "myint"
                 }
 
                 it("should return the saved contentlet with old fields removed") {
@@ -144,13 +150,13 @@ class KotestContentletControllerTest: DescribeSpec() {
                     response = webTestClient.delete().uri("/${storedContentlet.id}").exchange()
                 }
 
-                it("should return status ${HttpStatus.OK.value()}") {
+                it("should return status 200") {
                     response.expectStatus().isEqualTo(HttpStatus.OK)
                 }
 
                 it("should delete the contentlet from the database") {
                     val result = contentletRepository.findById(storedContentlet.id).block()
-                    assertThat(result).isNull()
+                    result shouldBe null
                 }
             }
         }
