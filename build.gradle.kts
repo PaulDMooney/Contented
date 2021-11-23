@@ -7,6 +7,8 @@ plugins {
 	kotlin("plugin.spring") version "1.5.31"
 }
 
+val kotestVersion = "4.4.3"
+
 group = "com.contended"
 version = "0.0.1-SNAPSHOT"
 java.sourceCompatibility = JavaVersion.VERSION_11
@@ -29,6 +31,9 @@ dependencies {
 	testImplementation("io.projectreactor:reactor-test")
 	testImplementation("org.assertj:assertj-core:3.20.2")
 	testImplementation("org.mockito.kotlin:mockito-kotlin:3.2.0")
+	testImplementation("io.kotest:kotest-runner-junit5:${kotestVersion}")
+	testImplementation("io.kotest:kotest-extensions-spring:${kotestVersion}")
+	testImplementation("io.kotest:kotest-assertions-core:${kotestVersion}")
 	testImplementation("io.netty:netty-resolver-dns-native-macos:4.1.70.Final:osx-aarch_64")
 }
 

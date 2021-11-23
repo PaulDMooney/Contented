@@ -1,106 +1,151 @@
 package com.contented.contentlet
 
-import com.contented.MongodemoApplication
-import org.assertj.core.api.Assertions.assertThat
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
+import io.kotest.core.spec.style.DescribeSpec
+import io.kotest.extensions.spring.SpringExtension
+import io.kotest.matchers.maps.shouldContain
+import io.kotest.matchers.maps.shouldNotContainKey
+import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.TestInstance
-import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.data.mongo.AutoConfigureDataMongo
-import org.springframework.boot.test.autoconfigure.data.mongo.DataMongoTest
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.web.server.LocalServerPort
-import org.springframework.core.ParameterizedTypeReference
 import org.springframework.http.HttpStatus
-import org.springframework.test.context.ContextConfiguration
-import org.springframework.test.context.junit.jupiter.SpringExtension
+import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.web.reactive.server.WebTestClient
-import java.util.function.Consumer
-
-inline fun <reified T> typeReference() = object : ParameterizedTypeReference<T>() {}
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT )
-@ExtendWith(SpringExtension::class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @AutoConfigureDataMongo
-class ContentletControllerTest @Autowired constructor(
+@DirtiesContext
+class ContentletControllerTest(@Autowired contentletRepository:ContentletRepository, @LocalServerPort port:Int): DescribeSpec() {
 
-    private val contentletRepository: ContentletRepository) {
+    override fun extensions() = listOf(SpringExtension)
 
-    private lateinit var webTestClient: WebTestClient;
+    init {
 
-    @LocalServerPort
-    protected var port: Int = 0;
+        lateinit var webTestClient: WebTestClient;
 
-    @BeforeEach
-    fun setup() {
-        contentletRepository.deleteAll();
-        webTestClient = WebTestClient.bindToServer().baseUrl(getRootUrl()).build();
+        fun saveOneContentlet() = contentletRepository.save(ContentletEntity("12345",hashMapOf("myint" to 1, "myboolean" to true, "mystring" to "string")))
+
+        fun getRootUrl(): String = "http://localhost:$port/contentlets"
+
+        beforeContainer {
+            webTestClient = WebTestClient.bindToServer().baseUrl(getRootUrl()).build();
+        }
+
+        afterEach {
+            contentletRepository.deleteAll();
+        }
+
+        describe("GET /all endpoint") {
+            it("should return all saved contentlets") {
+                // Given
+                saveOneContentlet().block();
+
+                // When
+                val response = webTestClient.get().uri("/all").exchange()
+
+                // Then
+                response.expectStatus()
+                    .is2xxSuccessful()
+                    .expectBodyList(ContentletEntity::class.java)
+                    .hasSize(1).value<WebTestClient.ListBodySpec<ContentletEntity>> { contentlets ->
+                        contentlets[0].id shouldBe "12345"
+                        contentlets[0].get() shouldContain ("myint" to 1)
+                    };
+            }
+        }
+
+        describe("PUT endpoint") {
+
+            describe("save a new contentlet") {
+
+                // Given
+                val toSave = ContentletDTO("ABCDE", hashMapOf("myint" to 1, "myboolean" to true, "mystring" to "string"))
+
+                // When
+                val response = webTestClient.put().bodyValue(toSave).exchange()
+
+                it("should return status 201") {
+                    response.expectStatus().isEqualTo(HttpStatus.CREATED)
+                }
+
+                it("should have saved to the database") {
+                    val savedContentlet = contentletRepository.findById(toSave.id).block()
+
+                    // Found entry in database with same id and fields
+                    savedContentlet!!.id shouldBe toSave.id
+                    savedContentlet.get() shouldContain ("mystring" to toSave.get()["mystring"])
+                }
+
+                it("should return the saved contentlet") {
+                    response.expectBody().jsonPath("$.id").isEqualTo(toSave.id)
+                        .jsonPath("$.mystring").isEqualTo(toSave.get()["mystring"]!!)
+                }
+            }
+
+            describe("update an existing contentlet") {
+
+                // Given
+                val firstContentlet = ContentletEntity("FGHIJK", hashMapOf("myint" to 1) )
+                contentletRepository.save(firstContentlet).block()
+                val toSave = ContentletDTO(firstContentlet.id, hashMapOf("myboolean" to true))
+
+                // When
+                val response = webTestClient.put().bodyValue(toSave).exchange()
+
+                it("should return status 200") {
+                    response.expectStatus().isEqualTo(HttpStatus.OK)
+                }
+
+                it("should have saved updates to the database with old fields removed") {
+                    val updatedContentlet = contentletRepository.findById(toSave.id).block()
+
+                    updatedContentlet!!.get() shouldContain ("myboolean" to true)
+                    updatedContentlet.get() shouldNotContainKey "myint"
+                }
+
+                it("should return the saved contentlet with old fields removed") {
+                    response.expectBody().jsonPath("$.id").isEqualTo(toSave.id)
+                        .jsonPath("$.myboolean").isEqualTo(toSave.get()["myboolean"]!!)
+                        .jsonPath("$.myint").doesNotExist()
+                }
+
+            }
+        }
+        describe("DELETE endpoint") {
+
+            describe("delete existing content by identifier") {
+
+                // Given
+                val storedContentlet = ContentletEntity("FGHIJK", hashMapOf("myint" to 1))
+                contentletRepository.save(storedContentlet).block()
+
+                // When
+                val response = webTestClient.delete().uri("/${storedContentlet.id}").exchange()
+
+
+                it("should return status 200") {
+                    response.expectStatus().isEqualTo(HttpStatus.OK)
+                }
+
+                it("should delete the contentlet from the database") {
+                    val result = contentletRepository.findById(storedContentlet.id).block()
+                    result shouldBe null
+                }
+            }
+
+            describe( "delete non-existent content by identifier") {
+
+                // When
+                val response = webTestClient.delete().uri("/ABCDE").exchange()
+
+                it("should return status 200") {
+                    response.expectStatus().isEqualTo(HttpStatus.OK)
+                }
+            }
+        }
     }
 
-    private fun getRootUrl(): String = "http://localhost:$port/contentlets"
-
-    private fun saveOneContentlet() = contentletRepository.save(ContentletEntity("12345",hashMapOf("myint" to 1, "myboolean" to true, "mystring" to "string")))
-
-    @Test
-    fun `should return saved contentlet`() {
-
-        // Given
-        saveOneContentlet().block();
-
-        // When
-        val response = webTestClient.get().uri("/all").exchange()
-
-        // Then
-        response.expectStatus()
-            .is2xxSuccessful()
-            .expectBodyList(ContentletEntity::class.java)
-                .hasSize(1).value<WebTestClient.ListBodySpec<ContentletEntity>> {contentlets ->
-                    assertThat(contentlets[0]).hasFieldOrPropertyWithValue("id", "12345")
-                    assertThat(contentlets[0].get()).hasFieldOrPropertyWithValue("myint",1)
-                };
-    }
-
-    @Test
-    fun `should save new contentlet and return 201 and contentlet`() {
-
-        // Given
-        val toSave = ContentletDTO("ABCDE", hashMapOf("myint" to 1, "myboolean" to true, "mystring" to "string"))
-
-        // When
-        val response = webTestClient.put().bodyValue(toSave).exchange()
-
-        // Then
-        // Status 201 when created
-        response.expectStatus().isEqualTo(HttpStatus.CREATED)
-        val savedContentlet = contentletRepository.findById(toSave.id).block()
-
-        // Found entry in database with same id and fields
-        assertThat(savedContentlet).hasFieldOrPropertyWithValue("id", toSave.id)
-        assertThat(savedContentlet?.get()).hasFieldOrPropertyWithValue("mystring", toSave.get()["mystring"])
-
-        //
-        response.expectBody().jsonPath("$.id").isEqualTo(toSave.id)
-            .jsonPath("$.mystring").isEqualTo(toSave.get()["mystring"]!!)
-
-    }
-
-    @Test
-    fun `should update existing contentlet and return 200 and contentlet`() {
-
-        // Given
-        val firstContentlet = ContentletEntity("FGHIJK", hashMapOf("myint" to 1) )
-        contentletRepository.save(firstContentlet).block()
-        val toSave = ContentletDTO(firstContentlet.id, hashMapOf("myboolean" to true))
-
-        // When
-        val response = webTestClient.put().bodyValue(toSave).exchange()
-
-        // Then
-        response.expectStatus().isEqualTo(HttpStatus.OK)
-        val updatedContentlet = contentletRepository.findById(toSave.id).block()
-        assertThat(updatedContentlet?.get()).hasFieldOrPropertyWithValue("myboolean", true)
-        assertThat(updatedContentlet?.get()).doesNotContainEntry("myint", 1)
-    }
 }
