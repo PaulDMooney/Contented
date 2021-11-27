@@ -113,12 +113,12 @@ class KotestContentletServiceTest: DescribeSpec() {
                 val saveHooksCalled = arrayListOf<String>();
 
                 val saveHook1 = ContentletService.SaveHook(){ contentlet: ContentletEntity, isNew: Boolean, next: ContentletService.Next ->
-                    saveHooksCalled.add("first");
+                    saveHooksCalled.add("first")
                     next(contentlet, isNew)
                 }
 
                 val saveHook2 = ContentletService.SaveHook(){ contentlet: ContentletEntity, isNew: Boolean, next: ContentletService.Next ->
-                    saveHooksCalled.add("second");
+                    saveHooksCalled.add("second")
                     next(contentlet, isNew)
                 }
 
