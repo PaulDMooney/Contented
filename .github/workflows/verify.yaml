@@ -1,12 +1,12 @@
 name: Java CI
-on:
-  pull_request:
-  push:
-    branches:
-      - main
+on: push
+#  pull_request:
+#  push:
+#    branches:
+#      - main
 
 jobs:
-  Build-And-Test:
+  test:
     runs-on: ubuntu-latest
     steps:
 #      - name: Set up JDK 11
@@ -15,13 +15,13 @@ jobs:
 #          java-version: '11'
 #          distribution: 'adopt'
       - uses: actions/checkout@v2
-        with:
-          path: contently
+#        with:
+#          path: contented
       - run: echo "💡 The ${{ github.workspace }} repository has been cloned to the runner."
       - name: List files in the repository ${{github.workspace}}
         run: ls ${{ github.workspace }}
       - name: Just list files
-        run: ls
+        run: ls -l
 #      - name: Setup Gradle
 #        uses: gradle/gradle-build-action@v2
 ##      - uses: gradle/wrapper-validation-action@v1
