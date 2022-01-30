@@ -33,3 +33,14 @@ jobs:
           name: UNIT Tests            # Name of the check run which will be created
           path: build/test-results/test/TEST-*.xml    # Path to test results
           reporter: java-junit
+      - name: Coverage Report
+        uses: danielpalme/ReportGenerator-GitHub-Action@5.0.3
+        with:
+          reports: 'build/reports/kover/report.xml'
+          targetdir: 'coveragereport'
+          reporttypes: 'HtmlInline'
+      - name: Upload coverage report artifact
+        uses: actions/upload-artifact@v2.2.3
+        with:
+          name: CoverageReport # Artifact name
+          path: coveragereport # Directory containing files to upload
