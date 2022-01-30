@@ -20,9 +20,16 @@ jobs:
           distribution: 'zulu'
           cache: 'gradle'
           check-latest: false
-      - name: Setup Gradle
+      - name: Build
         uses: gradle/gradle-build-action@v2
         with:
           arguments: build
           # Should match gradle wrapper version
           gradle-version: 7.0.2
+      - name: Report Test Results
+        uses: dorny/test-reporter@v1
+        if: (success() || failure()) && ${{ !env.ACT }}    # run this step even if previous step failed
+        with:
+          name: UNIT Tests            # Name of the check run which will be created
+          path: build/test-results/test/TEST-*.xml    # Path to test results
+          reporter: java-junit
