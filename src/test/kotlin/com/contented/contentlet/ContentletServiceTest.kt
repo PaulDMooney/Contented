@@ -1,5 +1,6 @@
 package com.contented.contentlet
 
+import com.contented.testutil.MockSleuthTraceContext
 import io.kotest.core.spec.style.DescribeSpec
 import org.assertj.core.api.Assertions
 import org.mockito.ArgumentCaptor
@@ -7,6 +8,11 @@ import org.mockito.ArgumentMatchers
 import org.mockito.Mockito
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
+import org.springframework.cloud.sleuth.CurrentTraceContext
+import org.springframework.cloud.sleuth.TraceContext
+import org.springframework.cloud.sleuth.Tracer
+import org.springframework.cloud.sleuth.brave.bridge.BraveCurrentTraceContext
+import org.springframework.cloud.sleuth.instrument.web.WebFluxSleuthOperators
 import reactor.core.publisher.Mono
 import reactor.test.StepVerifier
 
@@ -22,9 +28,11 @@ val saveHook2 = ContentletService.SaveHook() { contentlet: ContentletEntity, isN
 
 class KotestContentletServiceTest: DescribeSpec() {
 
-    lateinit var contentletRepository: ContentletRepository;
+    lateinit var contentletRepository: ContentletRepository
 
-    lateinit var contentletService: ContentletService;
+    lateinit var contentletService: ContentletService
+
+    lateinit var mockSleuthTraceContext: MockSleuthTraceContext
 
     fun `when repository#save() return input argument`() {
         whenever(contentletRepository.save(ArgumentMatchers.any()))
@@ -38,7 +46,9 @@ class KotestContentletServiceTest: DescribeSpec() {
     init {
 
         beforeEach {
-            contentletRepository = mock();
+
+            contentletRepository = mock()
+            mockSleuthTraceContext = MockSleuthTraceContext()
             contentletService = ContentletService(contentletRepository, listOf(saveHook, saveHook2))
         }
 
@@ -51,10 +61,11 @@ class KotestContentletServiceTest: DescribeSpec() {
                 `when repository#existsById return`(true)
 
                 // when
-                val contentletResult = contentletService.save(contentletToSave);
+                val contentletResult = contentletService.save(contentletToSave)
+
 
                 // then
-                StepVerifier.create(contentletResult)
+                StepVerifier.create(mockSleuthTraceContext.addMockTraceContext(contentletResult))
                     .assertNext { resultPair ->
                         val contentletEntity = resultPair.contentlet
                         Assertions.assertThat(contentletEntity.id).isEqualTo(contentletToSave.id)
@@ -70,10 +81,10 @@ class KotestContentletServiceTest: DescribeSpec() {
                 `when repository#existsById return`(false)
 
                 // when
-                val contentletResult = contentletService.save(contentletToSave);
+                val contentletResult = contentletService.save(contentletToSave)
 
                 // then
-                StepVerifier.create(contentletResult)
+                StepVerifier.create(mockSleuthTraceContext.addMockTraceContext(contentletResult))
                     .assertNext { resultPair ->
                         Assertions.assertThat(resultPair.isNew).isTrue()
                     }
@@ -93,7 +104,7 @@ class KotestContentletServiceTest: DescribeSpec() {
                 val deleteResult = contentletService.deleteById(identifierToDelete)
 
                 // then
-                StepVerifier.create(deleteResult)
+                StepVerifier.create(mockSleuthTraceContext.addMockTraceContext(deleteResult))
                     .then {
                         Mockito.verify(contentletRepository, Mockito.times(1))
                             .deleteById(deleteIdCaptor.capture())
@@ -128,7 +139,7 @@ class KotestContentletServiceTest: DescribeSpec() {
                 var result = contentletService.save(contentletToSave);
 
                 // Then
-                StepVerifier.create(result)
+                StepVerifier.create(mockSleuthTraceContext.addMockTraceContext(result))
                     .assertNext {
                         Assertions.assertThat(saveHooksCalled).asList().containsExactly("first", "second");
                     }.verifyComplete();
