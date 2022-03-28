@@ -1,12 +1,16 @@
 package com.contented.contentlet
 
 import com.contented.utils.companionLogger
+import com.contented.utils.doOnNextWithSpanInScope
 import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.cloud.sleuth.instrument.web.WebFluxSleuthOperators
+import org.springframework.cloud.sleuth.instrument.web.WebFluxSleuthOperators.withSpanInScope
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Mono
+import reactor.util.context.ContextView
 import java.util.*
+import java.util.concurrent.Callable
 import kotlin.collections.ArrayDeque
 
 @Service
@@ -19,15 +23,22 @@ class ContentletService @Autowired constructor(
     }
 
     fun save(contentletToSave: ContentletEntity): Mono<ResultPair> {
-        return contentletRepository.existsById(contentletToSave.id)
-            .flatMap { result ->
-                if (result) {
-                    logger.info("Contentlet ${contentletToSave.id} already exists, updating...")
-                } else {
-                    logger.info("Contentlet ${contentletToSave.id} does not exist, creating...")
-                }
-                callSaveHookChain(contentletToSave, !result);
+        return Mono.deferContextual { contextView ->
+            withSpanInScope(contextView) {
+                logger.info("Creating or updating contentlet ${contentletToSave.id}")
             }
+            contentletRepository.existsById(contentletToSave.id)
+                .flatMap { result ->
+                    withSpanInScope(contextView) {
+                        if (result) {
+                            logger.info("Contentlet ${contentletToSave.id} already exists, updating...")
+                        } else {
+                            logger.info("Contentlet ${contentletToSave.id} does not exist, creating...")
+                        }
+                    }
+                    callSaveHookChain(contentletToSave, !result);
+                }
+        }
     }
 
     private fun callSaveHookChain(contentletToSave: ContentletEntity, isNew: Boolean): Mono<ResultPair> {
@@ -37,15 +48,24 @@ class ContentletService @Autowired constructor(
 
     private fun finalSaveHook(contentletToSave: ContentletEntity, isNew: Boolean): Mono<ResultPair> {
         return contentletRepository.save(contentletToSave)
-            .doOnNext { logger.info("Contentlet ${contentletToSave.id} saved to repository") }
+            .doOnNextWithSpanInScope {
+                logger.info("Contentlet ${contentletToSave.id} saved to repository")
+            }
             .map { savedContentlet -> ResultPair(contentlet = savedContentlet, isNew = isNew)}
     }
 
     fun deleteById(identifierToDelete: String): Mono<Void> {
-        logger.info("Deleting contentlet $identifierToDelete")
-        return contentletRepository.deleteById(identifierToDelete).doOnSuccess {
-            logger.info("Deleted contentlet $identifierToDelete successfully")
+        return Mono.deferContextual { contextView ->
+            withSpanInScope(contextView) {
+                logger.info("Deleting contentlet $identifierToDelete")
+            }
+            contentletRepository.deleteById(identifierToDelete).doOnSuccess {
+                withSpanInScope(contextView) {
+                    logger.info("Deleted contentlet $identifierToDelete successfully")
+                }
+            }
         }
+
     }
 
     class ResultPair(val contentlet: ContentletEntity, val isNew: Boolean)
@@ -60,12 +80,21 @@ class ContentletService @Autowired constructor(
 
         fun next(contentletToSave: ContentletEntity, isNew: Boolean):Mono<ResultPair> {
             val saveHook = saveHookStack.removeFirstOrNull();
-            return if (saveHook != null) {
-                logger.debug("Calling savehook", saveHook)
-                saveHook(contentletToSave, isNew, this::next)
-            } else {
-                logger.debug("Calling final save function")
-                saveFunction(contentletToSave, isNew);
+
+            return withSpanScope {
+                if (saveHook != null) {
+                    logger.debug("Calling savehook", saveHook)
+                    saveHook(contentletToSave, isNew, this::next)
+                } else {
+                    logger.debug("Calling final save function")
+                    saveFunction(contentletToSave, isNew)
+                }
+            }
+        }
+
+        private fun <T> withSpanScope(callable: Callable<Mono<T>>):Mono<T> {
+            return Mono.deferContextual { contextView ->
+                withSpanInScope(contextView, callable)
             }
         }
     }

@@ -2,6 +2,9 @@
 spring:
   application:
     name: Contented
+  sleuth:
+    reactor:
+      instrumentation-type: manual
   data:
     mongodb:
       authentication-database: admin
@@ -10,3 +13,6 @@ spring:
       database: demo
       username: root
       password: example
+logging:
+  level:
+    root: INFO
