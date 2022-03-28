@@ -1,5 +1,10 @@
 
 spring:
+  application:
+    name: Contented
+  sleuth:
+    reactor:
+      instrumentation-type: manual
   data:
     mongodb:
 #      Crucial for flapdoodle in-memory mongodb to work
