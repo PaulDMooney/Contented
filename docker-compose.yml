@@ -18,3 +18,15 @@ services:
     environment:
       ME_CONFIG_MONGODB_ADMINUSERNAME: root
       ME_CONFIG_MONGODB_ADMINPASSWORD: example
+  # Run with `docker-compose --profile elasticsearch up`
+  elasticsearch:
+    image: elasticsearch:8.1.3
+    ports:
+      - 9200:9200
+      - 9300:9300
+    environment:
+      discovery.type: single-node
+    profiles:
+      - elasticsearch
+    volumes:
+      - .volumes/elasticsearch:/usr/share/elasticsearch/data
