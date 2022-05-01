@@ -28,7 +28,7 @@ class ContentletControllerTest(@Autowired contentletRepository:ContentletReposit
 
         fun saveOneContentlet() = contentletRepository.save(ContentletEntity("12345",hashMapOf("myint" to 1, "myboolean" to true, "mystring" to "string")))
 
-        fun getRootUrl(): String = "http://localhost:$port/contentlets"
+        fun getRootUrl(): String = "http://localhost:$port/$CONTENTLETS_PATH"
 
         beforeContainer {
             webTestClient = WebTestClient.bindToServer().baseUrl(getRootUrl()).build();
@@ -48,7 +48,7 @@ class ContentletControllerTest(@Autowired contentletRepository:ContentletReposit
 
                 // Then
                 response.expectStatus()
-                    .is2xxSuccessful()
+                    .is2xxSuccessful
                     .expectBodyList(ContentletEntity::class.java)
                     .hasSize(1).value<WebTestClient.ListBodySpec<ContentletEntity>> { contentlets ->
                         contentlets[0].id shouldBe "12345"

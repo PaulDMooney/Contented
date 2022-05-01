@@ -9,3 +9,11 @@ spring:
     mongodb:
 #      Crucial for flapdoodle in-memory mongodb to work
       port: 0
+    elasticsearch:
+      client:
+        reactive:
+          endpoints: localhost:%{ELASTIC_PORT:9200}
+
+elasticsearch:
+  # Better want to get a port using `SocketUtils` ?
+ port: ${random.int(9201,9299)}
