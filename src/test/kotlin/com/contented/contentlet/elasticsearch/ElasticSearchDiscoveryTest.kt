@@ -2,6 +2,7 @@ package com.contented.contentlet.elasticsearch
 
 import com.contented.MongodemoApplication
 import io.kotest.core.spec.style.FreeSpec
+import io.kotest.extensions.testcontainers.perSpec
 import io.kotest.extensions.testcontainers.perTest
 import io.kotest.matchers.shouldBe
 import io.kotest.spring.SpringListener
@@ -17,6 +18,7 @@ import org.springframework.data.elasticsearch.client.reactive.ReactiveElasticsea
 import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.ContextConfiguration
+import org.testcontainers.containers.GenericContainer
 import java.time.Duration
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT )
@@ -36,37 +38,49 @@ class ElasticSearchDiscoveryTest(@Value("\${elasticsearch.port}") elasticSearchP
     private lateinit var reactiveElasticSearchClient: ReactiveElasticsearchClient
 
     init {
+        "check existence of index" - {
 
-        val elasticSearch = elasticSearchContainer(elasticSearchPort)
-        listener(elasticSearch.perTest())
+            var elasticSearch:GenericContainer<*>? = null;
+            beforeContainer {
+                elasticSearch = elasticSearchContainer(elasticSearchPort)
+                elasticSearch?.start()
+            }
+            afterContainer {
+                elasticSearch?.stop()
+            }
 
+            "with a new instance of elasticsearch" -{
+                val getIndex = GetIndexRequest("myindex")
+                val result = reactiveElasticSearchClient.indices()
+                    .existsIndex(getIndex)
+                    .block(Duration.ofSeconds(60))
 
-        "check existence of indices" {
-            val getIndex = GetIndexRequest("myindex")
-            val result = reactiveElasticSearchClient.indices()
-                .existsIndex(getIndex)
-                .block(Duration.ofSeconds(60))
+                "it should not exist" {
+                    result shouldBe false
+                }
+            }
 
-            result shouldBe false
-        }
+            "after creating an index" - {
+                val myIndexName = "myindex"
+                val createIndex = CreateIndexRequest(myIndexName)
 
-        "create index" {
-            val myIndexName = "myindex"
-            val createIndex = CreateIndexRequest(myIndexName)
+                val createIndexResult = reactiveElasticSearchClient.indices()
+                    .createIndex(createIndex)
+                    .block(Duration.ofSeconds(60))
 
-            val createIndexResult = reactiveElasticSearchClient.indices()
-                .createIndex(createIndex)
-                .block(Duration.ofSeconds(60))
+                "the response should be true" {
+                    createIndexResult shouldBe true
+                }
 
-            createIndexResult shouldBe true
+                "The index should exist" {
+                    val getIndex = GetIndexRequest(myIndexName)
+                    val getIndexResult = reactiveElasticSearchClient.indices()
+                        .existsIndex(getIndex)
+                        .block(Duration.ofSeconds(60))
 
-            val getIndex = GetIndexRequest(myIndexName)
-            val getIndexResult = reactiveElasticSearchClient.indices()
-                .existsIndex(getIndex)
-                .block(Duration.ofSeconds(60))
-
-            getIndexResult shouldBe true
-
+                    getIndexResult shouldBe true
+                }
+            }
         }
     }
 }
