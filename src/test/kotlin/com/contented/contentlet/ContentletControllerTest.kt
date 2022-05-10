@@ -1,5 +1,6 @@
 package com.contented.contentlet
 
+import com.contented.MongodemoApplication
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.extensions.spring.SpringExtension
 import io.kotest.matchers.maps.shouldContain
@@ -7,16 +8,18 @@ import io.kotest.matchers.maps.shouldNotContainKey
 import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.TestInstance
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration
+import org.springframework.boot.autoconfigure.data.elasticsearch.ReactiveElasticsearchRestClientAutoConfiguration
 import org.springframework.boot.test.autoconfigure.data.mongo.AutoConfigureDataMongo
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.web.server.LocalServerPort
 import org.springframework.http.HttpStatus
 import org.springframework.test.annotation.DirtiesContext
+import org.springframework.test.context.TestPropertySource
 import org.springframework.test.web.reactive.server.WebTestClient
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT )
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, classes = [MongodemoApplication::class] )
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-@AutoConfigureDataMongo
 @DirtiesContext
 class ContentletControllerTest(@Autowired contentletRepository:ContentletRepository, @LocalServerPort port:Int): DescribeSpec() {
 

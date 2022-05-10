@@ -1,7 +1,9 @@
 package com.contented.config
 
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Configuration
 import org.springframework.data.elasticsearch.client.ClientConfiguration
 import org.springframework.data.elasticsearch.client.reactive.ReactiveElasticsearchClient
 import org.springframework.data.elasticsearch.client.reactive.ReactiveRestClients
@@ -13,12 +15,17 @@ import org.springframework.web.reactive.function.client.ExchangeStrategies
 /**
  * Deriving configuration from this article: https://paolodedominicis.medium.com/reactive-spring-data-elasticsearch-with-spring-boot-dbcfdc9edb3d
  */
+//@ConditionalOnProperty(
+//    "elasticsearch.enabled",
+//    havingValue = "true",
+//    matchIfMissing = false)
+//@Configuration
 class ElasticSearchConfig: AbstractReactiveElasticsearchConfiguration() {
 
-    @Value("\${spring.data.elasticsearch.client.reactive.endpoints}")
+    //@Value("\${spring.data.elasticsearch.client.reactive.endpoints}")
     private val elasticSearchEndpoints: String? = null
 
-    @Bean
+    //@Bean
     override fun reactiveElasticsearchClient(): ReactiveElasticsearchClient {
         val clientConfiguration: ClientConfiguration = ClientConfiguration.builder()
             .connectedTo(elasticSearchEndpoints)

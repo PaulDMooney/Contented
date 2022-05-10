@@ -1,4 +1,6 @@
-
+elasticsearch:
+  port: -1
+  enabled: false
 spring:
   application:
     name: Contented
@@ -7,13 +9,9 @@ spring:
       instrumentation-type: manual
   data:
     mongodb:
-#      Crucial for flapdoodle in-memory mongodb to work
+      #      Crucial for flapdoodle in-memory mongodb to work
       port: 0
-    elasticsearch:
-      client:
-        reactive:
-          endpoints: localhost:%{ELASTIC_PORT:9200}
-
-elasticsearch:
-  # Better want to get a port using `SocketUtils` ?
- port: ${random.int(9201,9299)}
+#    elasticsearch:
+#      client:
+#        reactive:
+#          endpoints: "localhost:${elasticsearch.port}"
