@@ -2,7 +2,10 @@ package com.contented.contentlet.elasticsearch
 
 import com.contented.MongodemoApplication
 import io.kotest.core.spec.style.FreeSpec
+import io.kotest.matchers.maps.shouldHaveKey
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
+import io.kotest.matchers.types.shouldBeSameInstanceAs
 import io.kotest.spring.SpringListener
 import org.elasticsearch.client.indices.CreateIndexRequest
 import org.elasticsearch.client.indices.GetIndexRequest
@@ -168,6 +171,53 @@ class ElasticSearchDiscoveryTest(@Value("\${elasticsearch.port}") elasticSearchP
                         .build();
                     var queryResults = reactiveElasticSearchOperations
                         .search(query, ContentletDoc::class.java, IndexCoordinates.of(myIndexName))
+                        .collectList()
+                        .block()
+
+                    queryResults?.size shouldBe 0
+                }
+            }
+
+            "save hashmap" - {
+                val myIndexName = "myindex"
+                val firstWordsOfId = "my id with"
+                val fullId = "${firstWordsOfId} spaces 2"
+                val createIndexResult = `setup index with mapping file`(myIndexName,
+                    "/elasticsearch/mappings.json", reactiveElasticSearchClient)
+                    .block(Duration.ofSeconds(20))
+
+                val result = reactiveElasticSearchOperations.save(
+                    mutableMapOf("id" to fullId),
+                    IndexCoordinates.of(myIndexName))
+                    .block(Duration.ofSeconds(20))
+
+                "it should return a result" {
+                    result shouldNotBe null
+                    result?.shouldHaveKey("id")
+                    result?.get("id") shouldBe fullId
+                }
+
+                "entity should be queryable by exact match of its keyword field" {
+                    val query = NativeSearchQueryBuilder()
+                        .withQuery(matchQuery("id",fullId))
+                        .build();
+                    var queryResults = reactiveElasticSearchOperations
+                        .search(query, Map::class.java, IndexCoordinates.of(myIndexName))
+                        .collectList()
+                        .block()
+
+                    queryResults?.size shouldBe 1
+
+                    var esEntity = queryResults?.get(0)?.content
+                    esEntity?.get("id") shouldBe fullId
+                }
+
+                "entity should not be queryable by only partial match of its keyword field" {
+                    val query = NativeSearchQueryBuilder()
+                        .withQuery(matchQuery("id",firstWordsOfId))
+                        .build();
+                    var queryResults = reactiveElasticSearchOperations
+                        .search(query, Map::class.java, IndexCoordinates.of(myIndexName))
                         .collectList()
                         .block()
 
