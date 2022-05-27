@@ -21,6 +21,7 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-data-mongodb-reactive")
 	implementation("org.springframework.boot:spring-boot-starter-webflux")
 	implementation("org.springframework.cloud:spring-cloud-starter-sleuth:3.0.5")
+	implementation("org.springframework.boot:spring-boot-starter-data-elasticsearch")
 	implementation("org.springdoc:springdoc-openapi-webflux-ui:1.6.6")
 	implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
 	implementation("io.projectreactor.kotlin:reactor-kotlin-extensions")
@@ -35,7 +36,10 @@ dependencies {
 	testImplementation("io.kotest:kotest-runner-junit5:${kotestVersion}")
 	testImplementation("io.kotest:kotest-extensions-spring:${kotestVersion}")
 	testImplementation("io.kotest:kotest-assertions-core:${kotestVersion}")
+	testImplementation("io.kotest:kotest-extensions-testcontainers-jvm:${kotestVersion}")
+	testImplementation("org.testcontainers:junit-jupiter:1.16.3")
 	testImplementation("io.netty:netty-resolver-dns-native-macos:4.1.70.Final:osx-aarch_64")
+
 }
 
 tasks.withType<KotlinCompile> {

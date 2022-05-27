@@ -14,8 +14,10 @@ import org.springframework.web.server.ServerWebExchange
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 
+const val CONTENTLETS_PATH = "contentlets"
+
 @RestController
-@RequestMapping("/contentlets")
+@RequestMapping("/$CONTENTLETS_PATH")
 class ContentletController(private val contentletRepository: ContentletRepository,
                            private val contentletService: ContentletService,
                            private val tracer: Tracer,

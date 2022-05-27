@@ -6,6 +6,7 @@ import org.springframework.web.reactive.config.EnableWebFlux
 
 import io.swagger.v3.oas.annotations.OpenAPIDefinition
 import io.swagger.v3.oas.annotations.info.Info
+import org.springframework.data.elasticsearch.repository.config.EnableReactiveElasticsearchRepositories
 
 @SpringBootApplication
 @EnableWebFlux

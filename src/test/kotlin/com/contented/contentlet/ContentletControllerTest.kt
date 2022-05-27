@@ -1,5 +1,6 @@
 package com.contented.contentlet
 
+import com.contented.MongodemoApplication
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.extensions.spring.SpringExtension
 import io.kotest.matchers.maps.shouldContain
@@ -7,16 +8,18 @@ import io.kotest.matchers.maps.shouldNotContainKey
 import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.TestInstance
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration
+import org.springframework.boot.autoconfigure.data.elasticsearch.ReactiveElasticsearchRestClientAutoConfiguration
 import org.springframework.boot.test.autoconfigure.data.mongo.AutoConfigureDataMongo
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.web.server.LocalServerPort
 import org.springframework.http.HttpStatus
 import org.springframework.test.annotation.DirtiesContext
+import org.springframework.test.context.TestPropertySource
 import org.springframework.test.web.reactive.server.WebTestClient
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT )
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, classes = [MongodemoApplication::class] )
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-@AutoConfigureDataMongo
 @DirtiesContext
 class ContentletControllerTest(@Autowired contentletRepository:ContentletRepository, @LocalServerPort port:Int): DescribeSpec() {
 
@@ -28,7 +31,7 @@ class ContentletControllerTest(@Autowired contentletRepository:ContentletReposit
 
         fun saveOneContentlet() = contentletRepository.save(ContentletEntity("12345",hashMapOf("myint" to 1, "myboolean" to true, "mystring" to "string")))
 
-        fun getRootUrl(): String = "http://localhost:$port/contentlets"
+        fun getRootUrl(): String = "http://localhost:$port/$CONTENTLETS_PATH"
 
         beforeContainer {
             webTestClient = WebTestClient.bindToServer().baseUrl(getRootUrl()).build();
@@ -48,7 +51,7 @@ class ContentletControllerTest(@Autowired contentletRepository:ContentletReposit
 
                 // Then
                 response.expectStatus()
-                    .is2xxSuccessful()
+                    .is2xxSuccessful
                     .expectBodyList(ContentletEntity::class.java)
                     .hasSize(1).value<WebTestClient.ListBodySpec<ContentletEntity>> { contentlets ->
                         contentlets[0].id shouldBe "12345"
