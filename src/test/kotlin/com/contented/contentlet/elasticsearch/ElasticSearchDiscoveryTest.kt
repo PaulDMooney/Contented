@@ -1,6 +1,7 @@
 package com.contented.contentlet.elasticsearch
 
 import com.contented.MongodemoApplication
+import io.kotest.core.extensions.Extension
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.maps.shouldHaveKey
 import io.kotest.matchers.shouldBe
@@ -62,7 +63,7 @@ class ElasticSearchDiscoveryTest(@Value("\${elasticsearch.port}") elasticSearchP
                 val getIndex = GetIndexRequest("myindex")
                 val result = reactiveElasticSearchClient.indices()
                     .existsIndex(getIndex)
-                    .block(Duration.ofSeconds(60))
+                    .block(Duration.ofSeconds(10))
 
                 "it should not exist" {
                     result shouldBe false
@@ -222,6 +223,7 @@ class ElasticSearchDiscoveryTest(@Value("\${elasticsearch.port}") elasticSearchP
                         .block()
 
                     queryResults?.size shouldBe 0
+
                 }
             }
         }

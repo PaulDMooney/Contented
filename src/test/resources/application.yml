@@ -1,6 +1,7 @@
 elasticsearch:
   port: -1
   enabled: false
+  indexname: testindex
 spring:
   application:
     name: Contented
