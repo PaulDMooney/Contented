@@ -13,6 +13,13 @@ spring:
       database: demo
       username: root
       password: example
+    elasticsearch:
+      client:
+        reactive:
+          endpoints: ${ELASTIC_HOST:localhost}:%{ELASTIC_PORT:9200}
 logging:
   level:
     root: INFO
+
+elasticsearch:
+  indexname: "myindex"
